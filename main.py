@@ -1,12 +1,14 @@
 import math
 import os
 import requests
+import datetime
+import random
 from playwright.sync_api import sync_playwright
 
 # =========================================================
 # CONFIG
 # =========================================================
-QURAN_API = (
+QURAN_API_RANDOM = (
     "https://api.alquran.cloud/v1/ayah/random/"
     "editions/quran-uthmani,id.indonesian"
 )
@@ -22,10 +24,24 @@ TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 # =========================================================
-# API GET DATA
+# API GET DATA (Dinamis: Hari Biasa vs Hari Jumat WIB)
 # =========================================================
-def get_random_ayah():
-    response = requests.get(QURAN_API, timeout=30)
+def get_ayah_data():
+    # Deteksi hari berdasarkan waktu UTC GitHub + offset WIB (UTC+7)
+    waktu_utc = datetime.datetime.now(datetime.timezone.utc)
+    waktu_wib = waktu_utc + datetime.timedelta(hours=7)
+    hari_ini = waktu_wib.weekday()  # 4 artinya hari Jumat
+
+    if hari_ini == 4:
+        print("🌙 [Mode Al-Kahfi Aktif] Hari Jumat WIB, mengambil ayat dari Surah Al-Kahfi...")
+        # Mengambil ayat 1-10 Al-Kahfi secara acak untuk variasi pengingat
+        ayat_pilihan = random.randint(1, 10)
+        url = f"https://api.alquran.cloud/v1/ayah/18:{ayat_pilihan}/editions/quran-uthmani,id.indonesian"
+    else:
+        print("📖 [Mode Reguler] Hari biasa, mengambil ayat acak...")
+        url = QURAN_API_RANDOM
+
+    response = requests.get(url, timeout=30)
     response.raise_for_status()
     data = response.json()["data"]
 
@@ -215,7 +231,6 @@ def generate_images(arabic, translation, surah_name, ayah_number):
     reference = f"{surah_name.upper()}: {ayah_number}"
     files = []
 
-    # Membuka browser 1 kali saja untuk memproses semua slide agar menghemat RAM & CPU GitHub Actions
     with sync_playwright() as p:
         browser = p.chromium.launch()
         page = browser.new_page(viewport={"width": WIDTH, "height": HEIGHT})
@@ -239,10 +254,22 @@ def generate_images(arabic, translation, surah_name, ayah_number):
     return files
 
 # =========================================================
-# CAPTION CHANNEL TELEGRAM (LENGKAP TEKS ARAB + TERJEMAHAN)
+# CAPTION CHANNEL TELEGRAM (DINAMIS & LENGKAP)
 # =========================================================
 def build_caption(arabic, translation, surah_name, ayah_number):
-    return f"""📖 *[RUNTIME IMAN DAILY QURAN]*
+    # Cek hari lagi untuk menyesuaikan tema caption (Reguler vs Al-Kahfi)
+    waktu_utc = datetime.datetime.now(datetime.timezone.utc)
+    waktu_wib = waktu_utc + datetime.timedelta(hours=7)
+    hari_ini = waktu_wib.weekday()
+
+    if hari_ini == 4:
+        header = "✨ *[RUNTIME IMAN - JUMAT AL-KAHFI]*"
+        hashtags = "#alkahfi #jumatberkah #alquran #selfreminder #runtimeiman #MHDWarrior"
+    else:
+        header = "📖 *[RUNTIME IMAN DAILY QURAN]*"
+        hashtags = "#alquran #selfreminder #runtimeiman #MHDWarrior"
+
+    return f"""{header}
 
 {arabic}
 
@@ -252,8 +279,11 @@ def build_caption(arabic, translation, surah_name, ayah_number):
 
 _Semoga ayat ini menjadi pengingat dan penyejuk hati kita hari ini._
 
-#alquran #selfreminder #runtimeiman #MHDWarrior"""
+{hashtags}"""
 
+# =========================================================
+# UPLOAD TO TELEGRAM
+# =========================================================
 def upload_to_telegram(files, caption):
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
         print("❌ Error: Secrets TELEGRAM_BOT_TOKEN atau TELEGRAM_CHAT_ID belum diisi di GitHub!")
@@ -288,7 +318,6 @@ def upload_to_telegram(files, caption):
         
         response = requests.post(url, data=payload, files=files_payload, timeout=60)
         
-        # Close files
         for f in files_payload.values():
             f.close()
 
@@ -304,9 +333,8 @@ def upload_to_telegram(files, caption):
             files_payload = {"photo": photo_file}
             response = requests.post(url, data=payload, files=files_payload, timeout=60)
 
-    # Status Pengiriman
     if response.status_code == 200:
-        print("✅ MANTAP! Postingan gambar berhasil mendarat langsung di Telegram.")
+        print("✅ Postingan gambar berhasil mendarat langsung di Telegram.")
     else:
         print(f"❌ Gagal kirim ke Telegram: {response.status_code} - {response.text}")
 
@@ -314,13 +342,14 @@ def upload_to_telegram(files, caption):
 # MAIN
 # =========================================================
 def main():
-    print("🔄 Mengambil data ayat dari API...")
-    arabic, translation, surah_name, ayah_number = get_random_ayah()
+    print("🔄 Mengambil data ayat dinamis...")
+    arabic, translation, surah_name, ayah_number = get_ayah_data()
 
     print(f"🎨 Membuat gambar slide untuk QS. {surah_name}: {ayah_number}...")
     files = generate_images(arabic, translation, surah_name, ayah_number)
 
-    caption = build_caption(surah_name, ayah_number)
+    print("📝 Menyusun caption lengkap...")
+    caption = build_caption(arabic, translation, surah_name, ayah_number)
 
     print("🚀 Mengirimkan langsung ke Telegram...")
     upload_to_telegram(files, caption)
