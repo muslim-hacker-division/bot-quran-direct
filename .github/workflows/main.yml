@@ -1,0 +1,14 @@
+name: Auto Post Telegram Direct
+
+on:
+  workflow_dispatch: # Biar bisa diklik tes manual kapan saja
+  schedule:
+    # Jam 02:17 UTC = 09:17 WIB (Setiap Hari)
+    - cron: '17 2 * * *'
+    # Jam 09:43 UTC = 16:43 WIB (Setiap Hari)
+    - cron: '43 9 * * *'
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+# ... (sisa code di bawahnya tetap sama dengan yang kemarin)
