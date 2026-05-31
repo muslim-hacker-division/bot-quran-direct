@@ -3,6 +3,7 @@ import os
 import requests
 import datetime
 import random
+import json 
 from playwright.sync_api import sync_playwright
 
 # =========================================================
@@ -34,7 +35,6 @@ def get_ayah_data():
 
     if hari_ini == 4:
         print("🌙 [Mode Al-Kahfi Aktif] Hari Jumat WIB, mengambil ayat dari Surah Al-Kahfi...")
-        # Mengambil ayat 1-110 Al-Kahfi
         ayat_pilihan = random.randint(1, 110)
         url = f"https://api.alquran.cloud/v1/ayah/18:{ayat_pilihan}/editions/quran-uthmani,id.indonesian"
     else:
@@ -99,7 +99,6 @@ body {{
     height: {HEIGHT}px;
     font-family: 'Plus Jakarta Sans', sans-serif;
     background-color: #02080d;
-    /* Efek Grid Labirin Teknologi + Gradasi Neon Cyberpunk */
     background-image: 
         linear-gradient(rgba(0, 242, 254, 0.03) 1px, transparent 1px),
         linear-gradient(90deg, rgba(0, 242, 254, 0.03) 1px, transparent 1px),
@@ -114,7 +113,6 @@ body {{
     align-items: center;
 }}
 
-/* Glassmorphic Cyber Container */
 .container {{
     position: relative;
     width: {WIDTH - 120}px;
@@ -131,7 +129,6 @@ body {{
         inset 0 0 30px rgba(0, 242, 254, 0.05);
 }}
 
-/* Tech HUD Corner Borders */
 .container::before, .container::after {{
     content: '';
     position: absolute;
@@ -142,7 +139,6 @@ body {{
 .container::before {{ top: -1px; left: -1px; border-right: none; border-bottom: none; border-top-left-radius: 20px; }}
 .container::after {{ bottom: -1px; right: -1px; border-left: none; border-top: none; border-bottom-right-radius: 20px; }}
 
-/* Teks Arab dengan Glow Lembut */
 .arabic {{
     font-family: 'Amiri', serif;
     font-size: 56px;
@@ -156,7 +152,6 @@ body {{
     text-shadow: 0 0 20px rgba(0, 242, 254, 0.2), 0 4px 10px rgba(0,0,0,0.7);
 }}
 
-/* Terjemahan Lebih Tebal dan Jelas */
 .translation {{
     font-size: 34px;
     font-weight: 400;
@@ -168,7 +163,6 @@ body {{
     text-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }}
 
-/* Referensi Surah bergaya HUD */
 .reference {{
     margin-top: 40px;
     font-family: 'Orbitron', sans-serif;
@@ -181,7 +175,6 @@ body {{
 
 .spacer {{ flex: 1; }}
 
-/* Footer Info */
 .footer-hud {{
     width: 100%;
     display: flex;
@@ -257,7 +250,6 @@ def generate_images(arabic, translation, surah_name, ayah_number):
 # CAPTION CHANNEL TELEGRAM (DINAMIS & LENGKAP)
 # =========================================================
 def build_caption(arabic, translation, surah_name, ayah_number):
-    # Cek hari lagi untuk menyesuaikan tema caption (Reguler vs Al-Kahfi)
     waktu_utc = datetime.datetime.now(datetime.timezone.utc)
     waktu_wib = waktu_utc + datetime.timedelta(hours=7)
     hari_ini = waktu_wib.weekday()
@@ -282,7 +274,7 @@ _Semoga ayat ini menjadi pengingat dan penyejuk hati kita hari ini._
 {hashtags}"""
 
 # =========================================================
-# UPLOAD TO TELEGRAM
+# UPLOAD TO TELEGRAM (FIXED JSON DUMPS)
 # =========================================================
 def upload_to_telegram(files, caption):
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
@@ -313,7 +305,7 @@ def upload_to_telegram(files, caption):
 
         payload = {
             "chat_id": TELEGRAM_CHAT_ID,
-            "media": requests.utils.json.dumps(media)
+            "media": json.dumps(media) # <-- FIX: Menggunakan library json standar bawaan Python
         }
         
         response = requests.post(url, data=payload, files=files_payload, timeout=60)
@@ -334,7 +326,7 @@ def upload_to_telegram(files, caption):
             response = requests.post(url, data=payload, files=files_payload, timeout=60)
 
     if response.status_code == 200:
-        print("✅ Postingan gambar berhasil mendarat langsung di Telegram.")
+        print("✅ MANTAP! Postingan gambar berhasil mendarat langsung di Telegram.")
     else:
         print(f"❌ Gagal kirim ke Telegram: {response.status_code} - {response.text}")
 
