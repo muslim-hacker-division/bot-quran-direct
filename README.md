@@ -11,7 +11,7 @@
 ---
 
 ## 🛠️ Tentang Proyek
-Bot otomatisasi generasi baru untuk menyiarkan ayat-ayat Al-Qur'an dan terjemahannya langsung ke Channel Telegram tanpa pihak ketiga (**No Make.com / Zapier**). 
+Bot otomatisasi generasi baru untuk menyiarkan ayat-ayat Al-Qur'an dan terjemahannya langsung ke Channel Telegram tanpa pihak ketiga. 
 
 Proyek ini menggunakan **Playwright Headless Browser** untuk merender template HTML interaktif berseragam **Modern Futuristic Cyberpunk Glow** menjadi gambar beresolusi tinggi ($1280 \times 1280\text{ px}$), lalu mengirimkannya sebagai album multimedia ke Telegram lengkap dengan teks Arab dan terjemahan di bagian *caption*.
 
