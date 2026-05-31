@@ -34,8 +34,8 @@ def get_ayah_data():
 
     if hari_ini == 4:
         print("🌙 [Mode Al-Kahfi Aktif] Hari Jumat WIB, mengambil ayat dari Surah Al-Kahfi...")
-        # Mengambil ayat 1-10 Al-Kahfi secara acak untuk variasi pengingat
-        ayat_pilihan = random.randint(1, 10)
+        # Mengambil ayat 1-110 Al-Kahfi
+        ayat_pilihan = random.randint(1, 110)
         url = f"https://api.alquran.cloud/v1/ayah/18:{ayat_pilihan}/editions/quran-uthmani,id.indonesian"
     else:
         print("📖 [Mode Reguler] Hari biasa, mengambil ayat acak...")
