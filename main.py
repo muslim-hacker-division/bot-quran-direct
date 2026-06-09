@@ -20,7 +20,6 @@ HEIGHT = 1280
 MAX_CHARS_PER_SLIDE = 380
 WATERMARK = "Poster Pengingat"
 
-# Telegram Config (Diambil dari GitHub Secrets)
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
@@ -28,21 +27,23 @@ TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 # API GET DATA (Dinamis: Hari Biasa vs Hari Jumat WIB)
 # =========================================================
 def get_ayah_data():
-    # Deteksi hari berdasarkan waktu UTC GitHub + offset WIB (UTC+7)
     waktu_utc = datetime.datetime.now(datetime.timezone.utc)
     waktu_wib = waktu_utc + datetime.timedelta(hours=7)
-    hari_ini = waktu_wib.weekday()  # 4 artinya hari Jumat
+    hari_ini = waktu_wib.weekday() 
 
     if hari_ini == 4:
-        print("🌙 [Mode Al-Kahfi Aktif] Hari Jumat WIB, mengambil ayat dari Surah Al-Kahfi...")
+        print("🌙 [Mode Al-Kahfi Aktif] Hari Jumat WIB...")
         ayat_pilihan = random.randint(1, 110)
         url = f"https://api.alquran.cloud/v1/ayah/18:{ayat_pilihan}/editions/quran-uthmani,id.indonesian"
     else:
-        print("📖 [Mode Reguler] Hari biasa, mengambil ayat acak...")
-        url = QURAN_API_RANDOM
+        surah_acak = random.randint(1, 114)
+        ayat_acak = random.randint(1, 30) 
+        print(f"📖 [Mode Reguler] Mengambil acak Surah: {surah_acak}, Ayat: {ayat_acak}...")
+        url = f"https://api.alquran.cloud/v1/ayah/{surah_acak}:{ayat_acak}/editions/quran-uthmani,id.indonesian"
 
     response = requests.get(url, timeout=30)
     response.raise_for_status()
+    
     data = response.json()["data"]
 
     arabic = data[0]["text"]
