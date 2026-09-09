@@ -54,7 +54,7 @@ def get_ayah_data():
     return arabic, translation, surah_name, ayah_number
 
 # =========================================================
-# SPLIT TEXT FOR SLIDES
+# Pecah Teksnya untuk Slide
 # =========================================================
 def split_translation(text, max_chars=MAX_CHARS_PER_SLIDE):
     words = text.split()
@@ -76,7 +76,7 @@ def split_translation(text, max_chars=MAX_CHARS_PER_SLIDE):
     return pages
 
 # =========================================================
-# MODERN FUTURISTIC HTML TEMPLATE
+# Template HTML Modern dan Futuristik
 # =========================================================
 def build_html(arabic, translation, reference, page_num, total_pages):
     arabic_block = ""
@@ -218,7 +218,7 @@ body {{
     return html
 
 # =========================================================
-# GENERATE ALL IMAGES (Optimized Browser Reuse)
+# HASILKAN SEMUA GAMBAR
 # =========================================================
 def generate_images(arabic, translation, surah_name, ayah_number):
     pages = split_translation(translation)
@@ -248,7 +248,7 @@ def generate_images(arabic, translation, surah_name, ayah_number):
     return files
 
 # =========================================================
-# CAPTION CHANNEL TELEGRAM (DINAMIS & LENGKAP)
+# POST CHANNEL TELEGRAM (DINAMIS & LENGKAP)
 # =========================================================
 def build_caption(arabic, translation, surah_name, ayah_number):
     waktu_utc = datetime.datetime.now(datetime.timezone.utc)
@@ -275,14 +275,14 @@ _Semoga ayat ini menjadi pengingat dan penyejuk hati kita hari ini._
 {hashtags}"""
 
 # =========================================================
-# UPLOAD TO TELEGRAM (FIXED JSON DUMPS)
+# UPLOAD TO TELEGRAM
 # =========================================================
 def upload_to_telegram(files, caption):
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
         print("❌ Error: Secrets TELEGRAM_BOT_TOKEN atau TELEGRAM_CHAT_ID belum diisi di GitHub!")
         return
 
-    # Jika postingan terdiri dari beberapa slide (Multiple Images)
+    # Jika postingan terdiri dari beberapa slide
     if len(files) > 1:
         url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMediaGroup"
         
@@ -306,7 +306,7 @@ def upload_to_telegram(files, caption):
 
         payload = {
             "chat_id": TELEGRAM_CHAT_ID,
-            "media": json.dumps(media) # <-- FIX: Menggunakan library json standar bawaan Python
+            "media": json.dumps(media) # <-- Perbaikan: Menggunakan library json standar bawaan Python
         }
         
         response = requests.post(url, data=payload, files=files_payload, timeout=60)
@@ -327,7 +327,7 @@ def upload_to_telegram(files, caption):
             response = requests.post(url, data=payload, files=files_payload, timeout=60)
 
     if response.status_code == 200:
-        print("✅ MANTAP! Postingan gambar berhasil mendarat langsung di Telegram.")
+        print("✅ OKE! Postingan gambar berhasil mendarat langsung di Telegram.")
     else:
         print(f"❌ Gagal kirim ke Telegram: {response.status_code} - {response.text}")
 
