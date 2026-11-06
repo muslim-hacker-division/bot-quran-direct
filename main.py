@@ -9,11 +9,6 @@ from playwright.sync_api import sync_playwright
 # =========================================================
 # CONFIG
 # =========================================================
-QURAN_API_RANDOM = (
-    "https://api.alquran.cloud/v1/ayah/random/"
-    "editions/quran-uthmani,id.indonesian"
-)
-
 OUTPUT_PREFIX = "slide"
 WIDTH = 1280
 HEIGHT = 1280
@@ -34,12 +29,11 @@ def get_ayah_data():
     if hari_ini == 4:
         print("🌙 [Mode Al-Kahfi Aktif] Hari Jumat WIB...")
         ayat_pilihan = random.randint(1, 110)
-        url = f"https://api.alquran.cloud/v1/ayah/18:{ayat_pilihan}/editions/quran-uthmani,id.indonesian"
+        url = f"https://api.alquran.cloud/v1/ayah/18/{ayat_pilihan}/editions/quran-uthmani,id.indonesian"
     else:
         surah_acak = random.randint(1, 114)
-        ayat_acak = random.randint(1, 30) 
-        print(f"📖 [Mode Reguler] Mengambil acak Surah: {surah_acak}, Ayat: {ayat_acak}...")
-        url = f"https://api.alquran.cloud/v1/ayah/{surah_acak}:{ayat_acak}/editions/quran-uthmani,id.indonesian"
+        url = "https://api.alquran.cloud/v1/ayah/random/editions/quran-uthmani,id.indonesian"
+        print(f"📖 [Mode Reguler] Mengambil ayat acak dari API...")
 
     response = requests.get(url, timeout=30)
     response.raise_for_status()
@@ -51,6 +45,7 @@ def get_ayah_data():
     surah_name = data[1]["surah"]["englishName"]
     ayah_number = data[1]["numberInSurah"]
 
+    print(f"✅ Berhasil mendapatkan: QS. {surah_name} Ayat {ayah_number}")
     return arabic, translation, surah_name, ayah_number
 
 # =========================================================
@@ -306,7 +301,7 @@ def upload_to_telegram(files, caption):
 
         payload = {
             "chat_id": TELEGRAM_CHAT_ID,
-            "media": json.dumps(media) # <-- Perbaikan: Menggunakan library json standar bawaan Python
+            "media": json.dumps(media)
         }
         
         response = requests.post(url, data=payload, files=files_payload, timeout=60)
