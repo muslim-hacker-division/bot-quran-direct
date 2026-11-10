@@ -3,23 +3,18 @@ import os
 import requests
 import datetime
 import random
+import json 
 from playwright.sync_api import sync_playwright
 
 # =========================================================
 # CONFIG
 # =========================================================
-QURAN_API_RANDOM = (
-    "https://api.alquran.cloud/v1/ayah/random/"
-    "editions/quran-uthmani,id.indonesian"
-)
-
 OUTPUT_PREFIX = "slide"
 WIDTH = 1280
 HEIGHT = 1280
 MAX_CHARS_PER_SLIDE = 380
 WATERMARK = "Poster Pengingat"
 
-# Telegram Config (Diambil dari GitHub Secrets)
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
@@ -27,22 +22,22 @@ TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 # API GET DATA (Dinamis: Hari Biasa vs Hari Jumat WIB)
 # =========================================================
 def get_ayah_data():
-    # Deteksi hari berdasarkan waktu UTC GitHub + offset WIB (UTC+7)
     waktu_utc = datetime.datetime.now(datetime.timezone.utc)
     waktu_wib = waktu_utc + datetime.timedelta(hours=7)
-    hari_ini = waktu_wib.weekday()  # 4 artinya hari Jumat
+    hari_ini = waktu_wib.weekday() 
 
     if hari_ini == 4:
-        print("🌙 [Mode Al-Kahfi Aktif] Hari Jumat WIB, mengambil ayat dari Surah Al-Kahfi...")
-        # Mengambil ayat 1-110 Al-Kahfi
+        print("🌙 [Mode Al-Kahfi Aktif] Hari Jumat WIB...")
         ayat_pilihan = random.randint(1, 110)
-        url = f"https://api.alquran.cloud/v1/ayah/18:{ayat_pilihan}/editions/quran-uthmani,id.indonesian"
+        url = f"https://api.alquran.cloud/v1/ayah/18/{ayat_pilihan}/editions/quran-uthmani,id.indonesian"
     else:
-        print("📖 [Mode Reguler] Hari biasa, mengambil ayat acak...")
-        url = QURAN_API_RANDOM
+        surah_acak = random.randint(1, 114)
+        url = "https://api.alquran.cloud/v1/ayah/random/editions/quran-uthmani,id.indonesian"
+        print(f"📖 [Mode Reguler] Mengambil ayat acak dari API...")
 
     response = requests.get(url, timeout=30)
     response.raise_for_status()
+    
     data = response.json()["data"]
 
     arabic = data[0]["text"]
@@ -50,10 +45,11 @@ def get_ayah_data():
     surah_name = data[1]["surah"]["englishName"]
     ayah_number = data[1]["numberInSurah"]
 
+    print(f"✅ Berhasil mendapatkan: QS. {surah_name} Ayat {ayah_number}")
     return arabic, translation, surah_name, ayah_number
 
 # =========================================================
-# SPLIT TEXT FOR SLIDES
+# Pecah Teksnya untuk Slide
 # =========================================================
 def split_translation(text, max_chars=MAX_CHARS_PER_SLIDE):
     words = text.split()
@@ -75,7 +71,7 @@ def split_translation(text, max_chars=MAX_CHARS_PER_SLIDE):
     return pages
 
 # =========================================================
-# MODERN FUTURISTIC HTML TEMPLATE
+# Template HTML Modern dan Futuristik
 # =========================================================
 def build_html(arabic, translation, reference, page_num, total_pages):
     arabic_block = ""
@@ -99,7 +95,6 @@ body {{
     height: {HEIGHT}px;
     font-family: 'Plus Jakarta Sans', sans-serif;
     background-color: #02080d;
-    /* Efek Grid Labirin Teknologi + Gradasi Neon Cyberpunk */
     background-image: 
         linear-gradient(rgba(0, 242, 254, 0.03) 1px, transparent 1px),
         linear-gradient(90deg, rgba(0, 242, 254, 0.03) 1px, transparent 1px),
@@ -114,7 +109,6 @@ body {{
     align-items: center;
 }}
 
-/* Glassmorphic Cyber Container */
 .container {{
     position: relative;
     width: {WIDTH - 120}px;
@@ -131,7 +125,6 @@ body {{
         inset 0 0 30px rgba(0, 242, 254, 0.05);
 }}
 
-/* Tech HUD Corner Borders */
 .container::before, .container::after {{
     content: '';
     position: absolute;
@@ -142,7 +135,6 @@ body {{
 .container::before {{ top: -1px; left: -1px; border-right: none; border-bottom: none; border-top-left-radius: 20px; }}
 .container::after {{ bottom: -1px; right: -1px; border-left: none; border-top: none; border-bottom-right-radius: 20px; }}
 
-/* Teks Arab dengan Glow Lembut */
 .arabic {{
     font-family: 'Amiri', serif;
     font-size: 56px;
@@ -156,7 +148,6 @@ body {{
     text-shadow: 0 0 20px rgba(0, 242, 254, 0.2), 0 4px 10px rgba(0,0,0,0.7);
 }}
 
-/* Terjemahan Lebih Tebal dan Jelas */
 .translation {{
     font-size: 34px;
     font-weight: 400;
@@ -168,7 +159,6 @@ body {{
     text-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }}
 
-/* Referensi Surah bergaya HUD */
 .reference {{
     margin-top: 40px;
     font-family: 'Orbitron', sans-serif;
@@ -181,7 +171,6 @@ body {{
 
 .spacer {{ flex: 1; }}
 
-/* Footer Info */
 .footer-hud {{
     width: 100%;
     display: flex;
@@ -224,7 +213,7 @@ body {{
     return html
 
 # =========================================================
-# GENERATE ALL IMAGES (Optimized Browser Reuse)
+# HASILKAN SEMUA GAMBAR
 # =========================================================
 def generate_images(arabic, translation, surah_name, ayah_number):
     pages = split_translation(translation)
@@ -254,10 +243,9 @@ def generate_images(arabic, translation, surah_name, ayah_number):
     return files
 
 # =========================================================
-# CAPTION CHANNEL TELEGRAM (DINAMIS & LENGKAP)
+# POST CHANNEL TELEGRAM (DINAMIS & LENGKAP)
 # =========================================================
 def build_caption(arabic, translation, surah_name, ayah_number):
-    # Cek hari lagi untuk menyesuaikan tema caption (Reguler vs Al-Kahfi)
     waktu_utc = datetime.datetime.now(datetime.timezone.utc)
     waktu_wib = waktu_utc + datetime.timedelta(hours=7)
     hari_ini = waktu_wib.weekday()
@@ -289,7 +277,7 @@ def upload_to_telegram(files, caption):
         print("❌ Error: Secrets TELEGRAM_BOT_TOKEN atau TELEGRAM_CHAT_ID belum diisi di GitHub!")
         return
 
-    # Jika postingan terdiri dari beberapa slide (Multiple Images)
+    # Jika postingan terdiri dari beberapa slide
     if len(files) > 1:
         url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMediaGroup"
         
@@ -313,7 +301,7 @@ def upload_to_telegram(files, caption):
 
         payload = {
             "chat_id": TELEGRAM_CHAT_ID,
-            "media": requests.utils.json.dumps(media)
+            "media": json.dumps(media)
         }
         
         response = requests.post(url, data=payload, files=files_payload, timeout=60)
@@ -334,7 +322,7 @@ def upload_to_telegram(files, caption):
             response = requests.post(url, data=payload, files=files_payload, timeout=60)
 
     if response.status_code == 200:
-        print("✅ Postingan gambar berhasil mendarat langsung di Telegram.")
+        print("✅ OKE! Postingan gambar berhasil mendarat langsung di Telegram.")
     else:
         print(f"❌ Gagal kirim ke Telegram: {response.status_code} - {response.text}")
 
